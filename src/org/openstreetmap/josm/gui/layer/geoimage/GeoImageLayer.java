@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -34,24 +33,22 @@ import java.util.concurrent.Executors;
 
 import javax.swing.Action;
 import javax.swing.Icon;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.SwingConstants;
 
 import org.openstreetmap.josm.actions.LassoModeAction;
 import org.openstreetmap.josm.actions.RenameLayerAction;
 import org.openstreetmap.josm.actions.mapmode.MapMode;
 import org.openstreetmap.josm.actions.mapmode.SelectAction;
 import org.openstreetmap.josm.data.Bounds;
+import org.openstreetmap.josm.data.ImageData;
+import org.openstreetmap.josm.data.ImageData.ImageDataUpdateListener;
 import org.openstreetmap.josm.data.osm.visitor.BoundingXYVisitor;
-import org.openstreetmap.josm.gui.ExtendedDialog;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.MapFrame.MapModeChangeListener;
 import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.gui.NavigatableComponent;
 import org.openstreetmap.josm.gui.PleaseWaitRunnable;
-import org.openstreetmap.josm.gui.datatransfer.ClipboardUtils;
 import org.openstreetmap.josm.gui.dialogs.LayerListDialog;
 import org.openstreetmap.josm.gui.dialogs.LayerListPopup;
 import org.openstreetmap.josm.gui.io.importexport.JpgImporter;
@@ -62,7 +59,6 @@ import org.openstreetmap.josm.gui.layer.JumpToMarkerActions.JumpToNextMarker;
 import org.openstreetmap.josm.gui.layer.JumpToMarkerActions.JumpToPreviousMarker;
 import org.openstreetmap.josm.gui.layer.Layer;
 import org.openstreetmap.josm.gui.layer.MainLayerManager.ActiveLayerChangeListener;
-import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.tools.ImageProvider;
 import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Utils;
@@ -71,19 +67,17 @@ import org.openstreetmap.josm.tools.Utils;
  * Layer displaying geottaged pictures.
  */
 public class GeoImageLayer extends AbstractModifiableLayer implements
-        JumpToMarkerLayer, NavigatableComponent.ZoomChangeListener {
+        JumpToMarkerLayer, NavigatableComponent.ZoomChangeListener, ImageDataUpdateListener {
 
     private static List<Action> menuAdditions = new LinkedList<>();
 
     private static volatile List<MapMode> supportedMapModes;
 
-    List<ImageEntry> data;
+    private final ImageData data;
     GpxLayer gpxLayer;
 
     private final Icon icon = ImageProvider.get("dialogs/geoimage/photo-marker");
     private final Icon selectedIcon = ImageProvider.get("dialogs/geoimage/photo-marker-selected");
-
-    private int currentPhoto = -1;
 
     boolean useThumbs;
     private final ExecutorService thumbsLoaderExecutor =
@@ -151,12 +145,10 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
      */
     public GeoImageLayer(final List<ImageEntry> data, GpxLayer gpxLayer, final String name, boolean useThumbs) {
         super(name != null ? name : tr("Geotagged Images"));
-        if (data != null) {
-            Collections.sort(data);
-        }
-        this.data = data;
+        this.data = new ImageData(data);
         this.gpxLayer = gpxLayer;
         this.useThumbs = useThumbs;
+        this.data.addImageDataUpdateListener(this);
     }
 
     /**
@@ -218,6 +210,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
                 e.extractExif();
                 entries.add(e);
             }
+
             layer = new GeoImageLayer(entries, gpxLayer);
             files.clear();
         }
@@ -292,9 +285,9 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
             if (layer != null) {
                 MainApplication.getLayerManager().addLayer(layer);
 
-                if (!canceled && layer.data != null && !layer.data.isEmpty()) {
+                if (!canceled && !layer.getImageData().getImages().isEmpty()) {
                     boolean noGeotagFound = true;
-                    for (ImageEntry e : layer.data) {
+                    for (ImageEntry e : layer.getImageData().getImages()) {
                         if (e.getPos() != null) {
                             noGeotagFound = false;
                         }
@@ -356,16 +349,13 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
     private String infoText() {
         int tagged = 0;
         int newdata = 0;
-        int n = 0;
-        if (data != null) {
-            n = data.size();
-            for (ImageEntry e : data) {
-                if (e.getPos() != null) {
-                    tagged++;
-                }
-                if (e.hasNewGpsData()) {
-                    newdata++;
-                }
+        int n = data.getImages().size();
+        for (ImageEntry e : data.getImages()) {
+            if (e.getPos() != null) {
+                tagged++;
+            }
+            if (e.hasNewGpsData()) {
+                newdata++;
             }
         }
         return "<html>"
@@ -391,14 +381,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
      */
     @Override
     public boolean isModified() {
-        if (data != null) {
-            for (ImageEntry e : data) {
-                if (e.hasNewGpsData()) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return this.data.isModified();
     }
 
     @Override
@@ -417,38 +400,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
         stopLoadThumbs();
         l.stopLoadThumbs();
 
-        final ImageEntry selected = l.data != null && l.currentPhoto >= 0 ? l.data.get(l.currentPhoto) : null;
-
-        if (l.data != null) {
-            data.addAll(l.data);
-        }
-        Collections.sort(data);
-
-        // Suppress the double photos.
-        if (data.size() > 1) {
-            ImageEntry cur;
-            ImageEntry prev = data.get(data.size() - 1);
-            for (int i = data.size() - 2; i >= 0; i--) {
-                cur = data.get(i);
-                if (cur.getFile().equals(prev.getFile())) {
-                    data.remove(i);
-                } else {
-                    prev = cur;
-                }
-            }
-        }
-
-        if (selected != null && !data.isEmpty()) {
-            GuiHelper.runInEDTAndWait(() -> {
-                for (int i = 0; i < data.size(); i++) {
-                    if (selected.equals(data.get(i))) {
-                        currentPhoto = i;
-                        ImageViewerDialog.showImage(this, data.get(i));
-                        break;
-                    }
-                }
-            });
-        }
+        this.data.mergeFrom(l.getImageData());
 
         setName(l.getName());
         thumbsLoaded &= l.thumbsLoaded;
@@ -530,20 +482,18 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
                 tempG.fillRect(0, 0, width, height);
                 tempG.setComposite(saveComp);
 
-                if (data != null) {
-                    for (ImageEntry e : data) {
-                        paintImage(e, mv, clip, tempG);
-                    }
-                    if (currentPhoto >= 0 && currentPhoto < data.size()) {
-                        // Make sure the selected image is on top in case multiple images overlap.
-                        paintImage(data.get(currentPhoto), mv, clip, tempG);
-                    }
+                for (ImageEntry e : this.data.getImages()) {
+                    paintImage(e, mv, clip, tempG);
+                }
+                if (this.data.getSelectedImage() != null) {
+                    // Make sure the selected image is on top in case multiple images overlap.
+                    paintImage(this.data.getSelectedImage(), mv, clip, tempG);
                 }
                 updateOffscreenBuffer = false;
             }
             g.drawImage(offscreenBuffer, 0, 0, null);
-        } else if (data != null) {
-            for (ImageEntry e : data) {
+        } else {
+            for (ImageEntry e : data.getImages()) {
                 if (e.getPos() == null) {
                     continue;
                 }
@@ -554,9 +504,8 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
             }
         }
 
-        if (currentPhoto >= 0 && currentPhoto < data.size()) {
-            ImageEntry e = data.get(currentPhoto);
-
+        ImageEntry e = data.getSelectedImage();
+        if (e != null) {
             if (e.getPos() != null) {
                 Point p = mv.getPoint(e.getPos());
 
@@ -621,7 +570,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
 
     @Override
     public void visitBoundingBox(BoundingXYVisitor v) {
-        for (ImageEntry e : data) {
+        for (ImageEntry e : data.getImages()) {
             v.visit(e.getPos());
         }
     }
@@ -630,11 +579,8 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
      * Show current photo on map and in image viewer.
      */
     public void showCurrentPhoto() {
-        clearOtherCurrentPhotos();
-        if (currentPhoto >= 0) {
-            ImageViewerDialog.showImage(this, data.get(currentPhoto));
-        } else {
-            ImageViewerDialog.showImage(this, null);
+        if (data.getSelectedImage() != null) {
+            clearOtherCurrentPhotos();
         }
         updateBufferAndRepaint();
     }
@@ -643,157 +589,58 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
      * Shows next photo.
      */
     public void showNextPhoto() {
-        if (data != null && !data.isEmpty()) {
-            currentPhoto++;
-            if (currentPhoto >= data.size()) {
-                currentPhoto = data.size() - 1;
-            }
-        } else {
-            currentPhoto = -1;
-        }
-        showCurrentPhoto();
+        this.data.selectNextImage();
     }
 
     /**
      * Shows previous photo.
      */
     public void showPreviousPhoto() {
-        if (data != null && !data.isEmpty()) {
-            currentPhoto--;
-            if (currentPhoto < 0) {
-                currentPhoto = 0;
-            }
-        } else {
-            currentPhoto = -1;
-        }
-        showCurrentPhoto();
+        this.data.selectPreviousImage();
     }
 
     /**
      * Shows first photo.
      */
     public void showFirstPhoto() {
-        if (data != null && !data.isEmpty()) {
-            currentPhoto = 0;
-        } else {
-            currentPhoto = -1;
-        }
-        showCurrentPhoto();
+        this.data.selectFirstImage();
     }
 
     /**
      * Shows last photo.
      */
     public void showLastPhoto() {
-        if (data != null && !data.isEmpty()) {
-            currentPhoto = data.size() - 1;
-        } else {
-            currentPhoto = -1;
-        }
-        showCurrentPhoto();
+        this.data.selectLastImage();
     }
 
-    public void checkPreviousNextButtons() {
-        ImageViewerDialog.setNextEnabled(data != null && currentPhoto < data.size() - 1);
-        ImageViewerDialog.setPreviousEnabled(currentPhoto > 0);
-    }
-
-    public void removeCurrentPhoto() {
-        if (data != null && !data.isEmpty() && currentPhoto >= 0 && currentPhoto < data.size()) {
-            data.remove(currentPhoto);
-            if (currentPhoto >= data.size()) {
-                currentPhoto = data.size() - 1;
-            }
-            showCurrentPhoto();
-        }
-    }
-
-    public void removeCurrentPhotoFromDisk() {
-        ImageEntry toDelete;
-        if (data != null && !data.isEmpty() && currentPhoto >= 0 && currentPhoto < data.size()) {
-            toDelete = data.get(currentPhoto);
-
-            int result = new ExtendedDialog(
-                    MainApplication.getMainFrame(),
-                    tr("Delete image file from disk"),
-                    tr("Cancel"), tr("Delete"))
-            .setButtonIcons("cancel", "dialogs/delete")
-            .setContent(new JLabel(tr("<html><h3>Delete the file {0} from disk?<p>The image file will be permanently lost!</h3></html>",
-                    toDelete.getFile().getName()), ImageProvider.get("dialogs/geoimage/deletefromdisk"), SwingConstants.LEFT))
-                    .toggleEnable("geoimage.deleteimagefromdisk")
-                    .setCancelButton(1)
-                    .setDefaultButton(2)
-                    .showDialog()
-                    .getValue();
-
-            if (result == 2) {
-                data.remove(currentPhoto);
-                if (currentPhoto >= data.size()) {
-                    currentPhoto = data.size() - 1;
-                }
-
-                if (Utils.deleteFile(toDelete.getFile())) {
-                    Logging.info("File "+toDelete.getFile()+" deleted. ");
-                } else {
-                    JOptionPane.showMessageDialog(
-                            MainApplication.getMainFrame(),
-                            tr("Image file could not be deleted."),
-                            tr("Error"),
-                            JOptionPane.ERROR_MESSAGE
-                            );
-                }
-
-                showCurrentPhoto();
-            }
-        }
-    }
-
-    public void copyCurrentPhotoPath() {
-        if (data != null && !data.isEmpty() && currentPhoto >= 0 && currentPhoto < data.size()) {
-            ClipboardUtils.copyString(data.get(currentPhoto).getFile().toString());
-        }
-    }
-
-    /**
-     * Removes a photo from the list of images by index.
-     * @param idx Image index
-     * @since 6392
-     */
-    public void removePhotoByIdx(int idx) {
-        if (idx >= 0 && data != null && idx < data.size()) {
-            data.remove(idx);
-        }
-    }
 
     /**
      * Check if the position of the mouse event is within the rectangle of the photo icon or thumbnail.
-     * @param idx Image index, range 0 .. size-1
+     * @param idx the image index
      * @param evt Mouse event
      * @return {@code true} if the photo matches the mouse position, {@code false} otherwise
      */
     private boolean isPhotoIdxUnderMouse(int idx, MouseEvent evt) {
-        if (idx >= 0 && data != null && idx < data.size()) {
-            ImageEntry img = data.get(idx);
-            if (img.getPos() != null) {
-                Point imgCenter = MainApplication.getMap().mapView.getPoint(img.getPos());
-                Rectangle imgRect;
-                if (useThumbs && img.hasThumbnail()) {
-                    Dimension imgDim = scaledDimension(img.getThumbnail());
-                    if (imgDim != null) {
-                        imgRect = new Rectangle(imgCenter.x - imgDim.width / 2,
-                                                imgCenter.y - imgDim.height / 2,
-                                                imgDim.width, imgDim.height);
-                    } else {
-                        imgRect = null;
-                    }
+        ImageEntry img = this.data.getImages().get(idx);
+        if (img.getPos() != null) {
+            Point imgCenter = MainApplication.getMap().mapView.getPoint(img.getPos());
+            Rectangle imgRect;
+            if (useThumbs && img.hasThumbnail()) {
+                Dimension imgDim = scaledDimension(img.getThumbnail());
+                if (imgDim != null) {
+                    imgRect = new Rectangle(imgCenter.x - imgDim.width / 2,
+                                            imgCenter.y - imgDim.height / 2,
+                                            imgDim.width, imgDim.height);
                 } else {
-                    imgRect = new Rectangle(imgCenter.x - icon.getIconWidth() / 2,
-                                            imgCenter.y - icon.getIconHeight() / 2,
-                                            icon.getIconWidth(), icon.getIconHeight());
+                    imgRect = null;
                 }
-                if (imgRect != null && imgRect.contains(evt.getPoint())) {
-                    return true;
-                }
+            } else {
+                imgRect = new Rectangle(imgCenter.x - icon.getIconWidth() / 2,
+                                        imgCenter.y - icon.getIconHeight() / 2,
+                                        icon.getIconWidth(), icon.getIconHeight());
+            }
+            if (imgRect != null && imgRect.contains(evt.getPoint())) {
+                return true;
             }
         }
         return false;
@@ -809,31 +656,32 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
      *               or {@code -1} if there is no image at the mouse position
      */
     private int getPhotoIdxUnderMouse(MouseEvent evt, boolean cycle) {
-        if (data != null) {
-            if (cycle && currentPhoto >= 0) {
-                // Cycle loop is forward as that is the natural order.
-                // Loop 1: One after current photo up to last one.
-                for (int idx = currentPhoto + 1; idx < data.size(); ++idx) {
-                    if (isPhotoIdxUnderMouse(idx, evt)) {
-                        return idx;
-                    }
+        ImageEntry selectedImage = this.data.getSelectedImage();
+        int selectedIndex = this.data.getImages().indexOf(selectedImage);
+
+        if (cycle && selectedImage != null) {
+            // Cycle loop is forward as that is the natural order.
+            // Loop 1: One after current photo up to last one.
+            for (int idx = selectedIndex + 1; idx < this.data.getImages().size(); ++idx) {
+                if (isPhotoIdxUnderMouse(idx, evt)) {
+                    return idx;
                 }
-                // Loop 2: First photo up to current one.
-                for (int idx = 0; idx <= currentPhoto; ++idx) {
-                    if (isPhotoIdxUnderMouse(idx, evt)) {
-                        return idx;
-                    }
+            }
+            // Loop 2: First photo up to current one.
+            for (int idx = 0; idx <= selectedIndex; ++idx) {
+                if (isPhotoIdxUnderMouse(idx, evt)) {
+                    return idx;
                 }
-            } else {
-                // Check for current photo first, i.e. keep it selected if it is under the mouse.
-                if (currentPhoto >= 0 && isPhotoIdxUnderMouse(currentPhoto, evt)) {
-                    return currentPhoto;
-                }
-                // Loop from last to first to prefer topmost image.
-                for (int idx = data.size() - 1; idx >= 0; --idx) {
-                    if (isPhotoIdxUnderMouse(idx, evt)) {
-                        return idx;
-                    }
+            }
+        } else {
+            // Check for current photo first, i.e. keep it selected if it is under the mouse.
+            if (selectedImage != null && isPhotoIdxUnderMouse(selectedIndex, evt)) {
+                return selectedIndex;
+            }
+            // Loop from last to first to prefer topmost image.
+            for (int idx = this.data.getImages().size() - 1; idx >= 0; --idx) {
+                if (isPhotoIdxUnderMouse(idx, evt)) {
+                    return idx;
                 }
             }
         }
@@ -861,21 +709,9 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
     public ImageEntry getPhotoUnderMouse(MouseEvent evt) {
         int idx = getPhotoIdxUnderMouse(evt);
         if (idx >= 0) {
-            return data.get(idx);
+            return this.data.getImages().get(idx);
         } else {
             return null;
-        }
-    }
-
-    /**
-     * Clears the currentPhoto, i.e. remove select marker, and optionally repaint.
-     * @param repaint Repaint flag
-     * @since 6392
-     */
-    public void clearCurrentPhoto(boolean repaint) {
-        currentPhoto = -1;
-        if (repaint) {
-            updateBufferAndRepaint();
         }
     }
 
@@ -886,7 +722,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
         for (GeoImageLayer layer:
                  MainApplication.getLayerManager().getLayersOfType(GeoImageLayer.class)) {
             if (layer != this) {
-                layer.clearCurrentPhoto(false);
+                layer.getImageData().clearSelectedImage();
             }
         }
     }
@@ -947,7 +783,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
             public void mouseReleased(MouseEvent ev) {
                 if (ev.getButton() != MouseEvent.BUTTON1)
                     return;
-                if (data == null || !isVisible() || !isMapModeOk())
+                if (!isVisible() || !isMapModeOk())
                     return;
 
                 Point mousePos = ev.getPoint();
@@ -956,8 +792,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
                 if (idx >= 0) {
                     lastSelPos = mousePos;
                     cycleModeArmed = false;
-                    currentPhoto = idx;
-                    showCurrentPhoto();
+                    data.setSelectedImage(data.getImages().get(idx));
                 }
             }
         };
@@ -1013,11 +848,6 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
         MapView.removeZoomChangeListener(this);
         MapFrame.removeMapModeChangeListener(mapModeListener);
         MainApplication.getLayerManager().removeActiveLayerChangeListener(activeLayerChangeListener);
-        currentPhoto = -1;
-        if (data != null) {
-            data.clear();
-        }
-        data = null;
     }
 
     @Override
@@ -1083,7 +913,16 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
      * @return List of images in layer
      */
     public List<ImageEntry> getImages() {
-        return data == null ? Collections.<ImageEntry>emptyList() : new ArrayList<>(data);
+        return new ArrayList<>(this.data.getImages());
+    }
+
+    /**
+     * Returns the image data store being used by this layer
+     * @return imageData
+     * @since xxx
+     */
+    public ImageData getImageData() {
+        return data;
     }
 
     /**
@@ -1127,5 +966,10 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
             stopLoadThumbs();
         }
         invalidate();
+    }
+
+    @Override
+    public void selectedImageChanged(ImageData data) {
+        this.showCurrentPhoto();
     }
 }
