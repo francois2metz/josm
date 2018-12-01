@@ -819,6 +819,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
         MapView.removeZoomChangeListener(this);
         MapFrame.removeMapModeChangeListener(mapModeListener);
         MainApplication.getLayerManager().removeActiveLayerChangeListener(activeLayerChangeListener);
+        this.data.removeImageDataUpdateListener(this);
     }
 
     @Override
