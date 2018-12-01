@@ -155,7 +155,7 @@ public class ImageData {
      * Select the previous image of the sequence
      */
     public void selectPreviousImage() {
-        if (data.size() == 0) {
+        if (data.isEmpty()) {
             return;
         }
         this.setSelectedImageIndex(Integer.max(0, this.selectedImageIndex - 1));
@@ -163,7 +163,7 @@ public class ImageData {
 
     /**
      * Select as the selected the given image
-     * @param image
+     * @param image the selected image
      */
     public void setSelectedImage(ImageEntry image) {
         this.setSelectedImageIndex(this.data.indexOf(image));
@@ -202,7 +202,7 @@ public class ImageData {
 
     /**
      * Add a listener that listens to image data changes
-     * @param listener
+     * @param listener the {@link ImageDataUpdateListener}
      */
     public void addImageDataUpdateListener(ImageDataUpdateListener listener) {
         listeners.addListener(listener);
