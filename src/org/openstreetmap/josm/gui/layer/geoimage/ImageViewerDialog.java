@@ -540,15 +540,6 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
     }
 
     /**
-     * Returns the layer associated with the image.
-     * @return Layer associated with the image
-     * @since 6392
-     */
-    public static GeoImageLayer getCurrentLayer() {
-        return null;
-    }
-
-    /**
      * Returns whether the center view is currently active.
      * @return {@code true} if the center view is active, {@code false} otherwise
      * @since 9416

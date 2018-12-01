@@ -586,35 +586,6 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
     }
 
     /**
-     * Shows next photo.
-     */
-    public void showNextPhoto() {
-        this.data.selectNextImage();
-    }
-
-    /**
-     * Shows previous photo.
-     */
-    public void showPreviousPhoto() {
-        this.data.selectPreviousImage();
-    }
-
-    /**
-     * Shows first photo.
-     */
-    public void showFirstPhoto() {
-        this.data.selectFirstImage();
-    }
-
-    /**
-     * Shows last photo.
-     */
-    public void showLastPhoto() {
-        this.data.selectLastImage();
-    }
-
-
-    /**
      * Check if the position of the mouse event is within the rectangle of the photo icon or thumbnail.
      * @param idx the image index
      * @param evt Mouse event
@@ -935,12 +906,12 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
 
     @Override
     public void jumpToNextMarker() {
-        showNextPhoto();
+        this.data.selectNextImage();
     }
 
     @Override
     public void jumpToPreviousMarker() {
-        showPreviousPhoto();
+        this.data.selectPreviousImage();
     }
 
     /**
