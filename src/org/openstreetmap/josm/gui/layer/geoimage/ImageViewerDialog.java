@@ -590,4 +590,9 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
     public void selectedImageChanged(ImageData data) {
         showImage(data, data.getSelectedImage());
     }
+
+    @Override
+    public void imageDataUpdated(ImageData data) {
+        showImage(data, data.getSelectedImage());
+    }
 }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.gui.layer.geoimage.ImageEntry;
 import org.openstreetmap.josm.tools.ListenerList;
 
@@ -17,6 +18,11 @@ public class ImageData {
      * A listener that is informed when the current selection change
      */
     public interface ImageDataUpdateListener {
+        /**
+         * Called when the data change
+         * @param data the image data
+         */
+        void imageDataUpdated(ImageData data);
         /**
          * Called when the selection change
          * @param data the image data
@@ -198,6 +204,47 @@ public class ImageData {
         } else {
             this.setSelectedImageIndex(this.selectedImageIndex, true);
         }
+    }
+
+    /**
+     * Remove the image from the list and trigger update listener
+     * @param img the {@link ImageEntry} to remove
+     */
+    public void removeImage(ImageEntry img) {
+        data.remove(img);
+        this.notifyImageUpdate();
+    }
+
+    /**
+     * Update the position of the image and trigger update
+     * @param img
+     * @param newPos
+     */
+    public void updateImagePosition(ImageEntry img, LatLon newPos) {
+        img.setPos(newPos);
+        this.afterImageUpdated(img);
+    }
+
+    /**
+     * Update the image direction of the image and trigger update
+     * @param img
+     * @param direction
+     */
+    public void updateImageDirection(ImageEntry img, double direction) {
+        img.setExifImgDir(direction);
+        this.afterImageUpdated(img);
+    }
+
+    /**
+     * Manually trigger the {@link ImageDataUpdateListener#imageDataUpdated(ImageData)}
+     */
+    public void notifyImageUpdate() {
+        listeners.fireEvent(l -> l.imageDataUpdated(this));
+    }
+
+    private void afterImageUpdated(ImageEntry img) {
+        img.flagNewGpsData();
+        this.notifyImageUpdate();
     }
 
     /**

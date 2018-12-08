@@ -13,6 +13,7 @@ import java.util.List;
 
 import org.junit.Test;
 import org.openstreetmap.josm.data.ImageData.ImageDataUpdateListener;
+import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.gui.layer.geoimage.ImageEntry;
 
 import mockit.Expectations;
@@ -153,6 +154,8 @@ public class ImageDataTest {
         ImageDataUpdateListener listener = new ImageDataUpdateListener() {
             @Override
             public void selectedImageChanged(ImageData data) {}
+            @Override
+            public void imageDataUpdated(ImageData data) {}
         };
         new Expectations(listener) {{
             listener.selectedImageChanged(data); times = 1;
@@ -180,6 +183,8 @@ public class ImageDataTest {
         ImageDataUpdateListener listener = new ImageDataUpdateListener() {
             @Override
             public void selectedImageChanged(ImageData data) {}
+            @Override
+            public void imageDataUpdated(ImageData data) {}
         };
         new Expectations(listener) {{
             listener.selectedImageChanged(data); times = 2;
@@ -187,6 +192,24 @@ public class ImageDataTest {
         data.addImageDataUpdateListener(listener);
         data.selectFirstImage();
         data.removeSelectedImage();
+    }
+
+    @Test
+    public void testRemoveImageAndTriggerListener() {
+        List<ImageEntry> list = this.getOneImage();
+        ImageData data = new ImageData(list);
+        ImageDataUpdateListener listener = new ImageDataUpdateListener() {
+            @Override
+            public void selectedImageChanged(ImageData data) {}
+            @Override
+            public void imageDataUpdated(ImageData data) {}
+        };
+        new Expectations(listener) {{
+            listener.imageDataUpdated(data); times = 1;
+        }};
+        data.addImageDataUpdateListener(listener);
+        data.removeImage(list.get(0));
+        assertEquals(0, data.getImages().size());
     }
 
     @Test
@@ -228,5 +251,68 @@ public class ImageDataTest {
         data.mergeFrom(data2);
         assertEquals(3, data.getImages().size());
         assertEquals(list2.get(0), data.getSelectedImage());
+    }
+
+
+    @Test
+    public void testUpdatePosition() {
+        List<ImageEntry> list = this.getOneImage();
+        ImageData data = new ImageData(list);
+
+        new Expectations(list.get(0)) {{
+            list.get(0).setPos((LatLon) any);
+            list.get(0).flagNewGpsData();
+        }};
+        data.updateImagePosition(list.get(0), new LatLon(0, 0));
+    }
+
+    @Test
+    public void testUpdateDirection() {
+        List<ImageEntry> list = this.getOneImage();
+        ImageData data = new ImageData(list);
+
+        new Expectations(list.get(0)) {{
+            list.get(0).setExifImgDir(0.0);
+            list.get(0).flagNewGpsData();
+        }};
+        data.updateImageDirection(list.get(0), 0);
+    }
+
+    @Test
+    public void testTriggerListenerOnUpdate() {
+        List<ImageEntry> list = this.getOneImage();
+        ImageData data = new ImageData(list);
+
+        ImageDataUpdateListener listener = new ImageDataUpdateListener() {
+            @Override
+            public void selectedImageChanged(ImageData data) {}
+            @Override
+            public void imageDataUpdated(ImageData data) {}
+        };
+        new Expectations(listener) {{
+            listener.imageDataUpdated(data); times = 1;
+        }};
+
+        data.addImageDataUpdateListener(listener);
+        data.updateImageDirection(list.get(0), 0);
+    }
+
+    @Test
+    public void testManuallyTriggerUpdateListener() {
+        List<ImageEntry> list = this.getOneImage();
+        ImageData data = new ImageData(list);
+
+        ImageDataUpdateListener listener = new ImageDataUpdateListener() {
+            @Override
+            public void selectedImageChanged(ImageData data) {}
+            @Override
+            public void imageDataUpdated(ImageData data) {}
+        };
+        new Expectations(listener) {{
+            listener.imageDataUpdated(data); times = 1;
+        }};
+
+        data.addImageDataUpdateListener(listener);
+        data.notifyImageUpdate();
     }
 }

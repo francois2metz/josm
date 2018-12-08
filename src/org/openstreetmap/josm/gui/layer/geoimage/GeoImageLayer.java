@@ -304,6 +304,11 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
         }
     }
 
+    /**
+     * Create a GeoImageLayer asynchronously
+     * @param files
+     * @param gpxLayer
+     */
     public static void create(Collection<File> files, GpxLayer gpxLayer) {
         MainApplication.worker.execute(new Loader(files, gpxLayer));
     }
@@ -313,6 +318,10 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
         return ImageProvider.get("dialogs/geoimage", ImageProvider.ImageSizes.LAYER);
     }
 
+    /**
+     * Register actions on the layer
+     * @param addition
+     */
     public static void registerMenuAddition(Action addition) {
         menuAdditions.add(addition);
     }
@@ -943,5 +952,10 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
     @Override
     public void selectedImageChanged(ImageData data) {
         this.showCurrentPhoto();
+    }
+
+    @Override
+    public void imageDataUpdated(ImageData data) {
+        updateBufferAndRepaint();
     }
 }
