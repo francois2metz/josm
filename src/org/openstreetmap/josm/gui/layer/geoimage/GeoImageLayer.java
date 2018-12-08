@@ -585,7 +585,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
     }
 
     /**
-     * Show current photo on map and in image viewer.
+     * Show current photo on map
      */
     public void showCurrentPhoto() {
         if (data.getSelectedImage() != null) {
