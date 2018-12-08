@@ -23,6 +23,7 @@ public class ImageData {
          * @param data the image data
          */
         void imageDataUpdated(ImageData data);
+
         /**
          * Called when the selection change
          * @param data the image data
@@ -217,8 +218,8 @@ public class ImageData {
 
     /**
      * Update the position of the image and trigger update
-     * @param img
-     * @param newPos
+     * @param img the image to update
+     * @param newPos the new position
      */
     public void updateImagePosition(ImageEntry img, LatLon newPos) {
         img.setPos(newPos);
@@ -227,8 +228,8 @@ public class ImageData {
 
     /**
      * Update the image direction of the image and trigger update
-     * @param img
-     * @param direction
+     * @param img the image to update
+     * @param direction the new direction
      */
     public void updateImageDirection(ImageEntry img, double direction) {
         img.setExifImgDir(direction);

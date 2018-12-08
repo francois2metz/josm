@@ -154,6 +154,7 @@ public class ImageDataTest {
         ImageDataUpdateListener listener = new ImageDataUpdateListener() {
             @Override
             public void selectedImageChanged(ImageData data) {}
+
             @Override
             public void imageDataUpdated(ImageData data) {}
         };
@@ -183,6 +184,7 @@ public class ImageDataTest {
         ImageDataUpdateListener listener = new ImageDataUpdateListener() {
             @Override
             public void selectedImageChanged(ImageData data) {}
+
             @Override
             public void imageDataUpdated(ImageData data) {}
         };
@@ -201,6 +203,7 @@ public class ImageDataTest {
         ImageDataUpdateListener listener = new ImageDataUpdateListener() {
             @Override
             public void selectedImageChanged(ImageData data) {}
+
             @Override
             public void imageDataUpdated(ImageData data) {}
         };
@@ -286,6 +289,7 @@ public class ImageDataTest {
         ImageDataUpdateListener listener = new ImageDataUpdateListener() {
             @Override
             public void selectedImageChanged(ImageData data) {}
+
             @Override
             public void imageDataUpdated(ImageData data) {}
         };
@@ -305,6 +309,7 @@ public class ImageDataTest {
         ImageDataUpdateListener listener = new ImageDataUpdateListener() {
             @Override
             public void selectedImageChanged(ImageData data) {}
+
             @Override
             public void imageDataUpdated(ImageData data) {}
         };

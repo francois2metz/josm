@@ -306,8 +306,8 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
 
     /**
      * Create a GeoImageLayer asynchronously
-     * @param files
-     * @param gpxLayer
+     * @param files the list of image files to display
+     * @param gpxLayer the gpx layer
      */
     public static void create(Collection<File> files, GpxLayer gpxLayer) {
         MainApplication.worker.execute(new Loader(files, gpxLayer));
@@ -320,7 +320,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
 
     /**
      * Register actions on the layer
-     * @param addition
+     * @param addition the action to be added
      */
     public static void registerMenuAddition(Action addition) {
         menuAdditions.add(addition);
