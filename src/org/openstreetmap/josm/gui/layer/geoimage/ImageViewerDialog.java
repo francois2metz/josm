@@ -13,6 +13,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.List;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -408,10 +409,15 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
     /**
      * Displays image for the given layer.
      * @param data the image data
-     * @param entry image entry
+     * @param entries the list of {@link ImageEntry}
      */
-    public void displayImage(ImageData data, ImageEntry entry) {
+    public void displayImage(ImageData data, List<ImageEntry> entries) {
         boolean imageChanged;
+        ImageEntry entry = null;
+
+        if (entries != null && entries.size() == 1) {
+            entry = entries.get(0);
+        }
 
         synchronized (this) {
             // TODO: pop up image dialog but don't load image again
@@ -469,6 +475,12 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
             // if this method is called to reinitialize dialog content with a blank image,
             // do not actually show the dialog again with a blank image if currently hidden (fix #10672)
             setTitle(tr("Geotagged Images"));
+            if (entries != null && entries.size() > 1) {
+                imgDisplay.setEmptyText(tr("Multiple images selected"));
+            } else {
+                imgDisplay.setEmptyText(null);
+            }
+
             imgDisplay.setImage(null);
             imgDisplay.setOsdText("");
             setNextEnabled(false);
@@ -577,11 +589,11 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
 
     @Override
     public void selectedImagesChanged(ImageData data) {
-        this.displayImage(data, data.getSelectedImages().size() == 1 ? data.getSelectedImages().get(0) : null);
+        displayImage(data, data.getSelectedImages());
     }
 
     @Override
     public void imageDataUpdated(ImageData data) {
-        this.displayImage(data, data.getSelectedImages().size() == 1 ? data.getSelectedImages().get(0) : null);
+        displayImage(data, data.getSelectedImages());
     }
 }
