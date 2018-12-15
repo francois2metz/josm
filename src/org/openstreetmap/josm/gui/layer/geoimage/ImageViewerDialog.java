@@ -308,8 +308,8 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (currentData != null && currentData.getSelectedImage() != null) {
-                ImageEntry toDelete = currentData.getSelectedImage();
+            if (currentData != null && !currentData.getSelectedImages().isEmpty()) {
+                ImageEntry toDelete = currentData.getSelectedImages().get(0);
 
                 int result = new ExtendedDialog(
                         MainApplication.getMainFrame(),
@@ -353,7 +353,7 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
         @Override
         public void actionPerformed(ActionEvent e) {
             if (currentData != null) {
-                ClipboardUtils.copyString(currentData.getSelectedImage().getFile().toString());
+                ClipboardUtils.copyString(currentData.getSelectedImages().get(0).getFile().toString());
             }
         }
     }
@@ -369,15 +369,6 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
             collapseButtonClicked = true;
             detachedDialog.getToolkit().getSystemEventQueue().postEvent(new WindowEvent(detachedDialog, WindowEvent.WINDOW_CLOSING));
         }
-    }
-
-    /**
-     * Displays image for the given data.
-     * @param data geo image data
-     * @param entry image entry
-     */
-    public static void showImage(ImageData data, ImageEntry entry) {
-        getInstance().displayImage(data, entry);
     }
 
     /**
@@ -585,12 +576,12 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
     }
 
     @Override
-    public void selectedImageChanged(ImageData data) {
-        showImage(data, data.getSelectedImage());
+    public void selectedImagesChanged(ImageData data) {
+        this.displayImage(data, data.getSelectedImages().size() == 1 ? data.getSelectedImages().get(0) : null);
     }
 
     @Override
     public void imageDataUpdated(ImageData data) {
-        showImage(data, data.getSelectedImage());
+        this.displayImage(data, data.getSelectedImages().size() == 1 ? data.getSelectedImages().get(0) : null);
     }
 }
