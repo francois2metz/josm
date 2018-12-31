@@ -95,6 +95,8 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
 
     /** Mouse position where the last image was selected. */
     private Point lastSelPos;
+    /** The mouse point */
+    private Point startPoint;
 
     /**
      * Image cycle mode flag.
@@ -767,6 +769,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
                 if (isVisible() && isMapModeOk()) {
                     cycleModeArmed = true;
                     invalidate();
+                    startPoint = e.getPoint();
                 }
             }
 
@@ -777,6 +780,9 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
                 if (!isVisible() || !isMapModeOk())
                     return;
                 if (!cycleModeArmed) {
+                    return;
+                }
+                if (!startPoint.equals(ev.getPoint())) {
                     return;
                 }
 
