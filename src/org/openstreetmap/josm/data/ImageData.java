@@ -265,8 +265,11 @@ public class ImageData {
      * Remove the current selected image from the list
      */
     public void removeSelectedImage() {
-        // TODO: check multiple images
-        if (getSelectedImages().size() != 1) {
+        List<ImageEntry> selected = getSelectedImages();
+        if (selected.size() > 1) {
+            throw new IllegalStateException(tr("Multiple images have been selected"));
+        }
+        if (selected.size() == 0) {
             return;
         }
         data.remove(getSelectedImages().get(0));
