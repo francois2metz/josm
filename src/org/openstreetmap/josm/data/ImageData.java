@@ -269,7 +269,7 @@ public class ImageData {
         if (selected.size() > 1) {
             throw new IllegalStateException(tr("Multiple images have been selected"));
         }
-        if (selected.size() == 0) {
+        if (selected.isEmpty()) {
             return;
         }
         data.remove(getSelectedImages().get(0));
