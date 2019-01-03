@@ -180,6 +180,17 @@ public class ImageDataTest {
         assertEquals(0, data.getSelectedImages().size());
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void testRemoveSelectedImageWithMultipleSelectionEnabled() {
+        List<ImageEntry> list = getOneImage();
+        ImageData data = new ImageData(list);
+        list.add(new ImageEntry(new File("test2")));
+        data.enableMultipleSelection();
+        data.selectFirstImage();
+        data.addImageToSelection(list.get(1));
+        data.removeSelectedImage();
+    }
+
     @Test
     public void testRemoveSelectedWithImageTriggerListener() {
         List<ImageEntry> list = getOneImage();
