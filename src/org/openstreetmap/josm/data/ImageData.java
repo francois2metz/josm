@@ -265,6 +265,7 @@ public class ImageData {
      * Remove the current selected image from the list
      */
     public void removeSelectedImage() {
+        // TODO: check multiple images
         if (getSelectedImages().size() != 1) {
             return;
         }
