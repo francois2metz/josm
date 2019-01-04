@@ -214,10 +214,11 @@ public class ImageData {
             throw new IllegalStateException(tr("You must enable multiple selection of images"));
         }
 
+        int index = data.indexOf(image);
         if (selectedImagesIndex.get(0) == -1) {
             setSelectedImage(image);
-        } else {
-            selectedImagesIndex.add(data.indexOf(image));
+        } else if (!selectedImagesIndex.contains(index)) {
+            selectedImagesIndex.add(index);
             listeners.fireEvent(l -> l.selectedImagesChanged(this));
         }
     }
