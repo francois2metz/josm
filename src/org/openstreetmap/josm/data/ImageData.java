@@ -37,7 +37,7 @@ public class ImageData {
 
     private List<Integer> selectedImagesIndex = new ArrayList<>();
 
-    private boolean multipleSelection = false;
+    private boolean multipleSelection;
 
     private final ListenerList<ImageDataUpdateListener> listeners = ListenerList.create();
 
