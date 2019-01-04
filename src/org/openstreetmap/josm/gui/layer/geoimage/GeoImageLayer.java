@@ -782,7 +782,9 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
                 if (!cycleModeArmed) {
                     return;
                 }
-                if (!startPoint.equals(ev.getPoint())) {
+
+                Rectangle hitBoxClick = new Rectangle((int) startPoint.getX() - 10, (int) startPoint.getY() - 10, 15, 15);
+                if (!hitBoxClick.contains(ev.getPoint())) {
                     return;
                 }
 
