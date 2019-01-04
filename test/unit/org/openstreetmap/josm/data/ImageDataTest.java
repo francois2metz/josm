@@ -299,6 +299,8 @@ public class ImageDataTest {
         ImageData data = new ImageData(list);
         data.enableMultipleSelection();
         data.addImageToSelection(list.get(0));
+        data.addImageToSelection(list.get(0));
+        assertEquals(1, data.getSelectedImages().size());
         data.addImageToSelection(list.get(1));
         assertEquals(2, data.getSelectedImages().size());
     }
