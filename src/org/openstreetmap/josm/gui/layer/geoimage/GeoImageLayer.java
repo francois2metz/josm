@@ -156,6 +156,59 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
         this.data.addImageDataUpdateListener(this);
     }
 
+    private final class MouseListener extends MouseAdapter {
+        private boolean isMapModeOk() {
+            MapMode mapMode = MainApplication.getMap().mapMode;
+            return mapMode == null || isSupportedMapMode(mapMode);
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (e.getButton() != MouseEvent.BUTTON1)
+                return;
+            if (isVisible() && isMapModeOk()) {
+                cycleModeArmed = true;
+                invalidate();
+                startPoint = e.getPoint();
+            }
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent ev) {
+            if (ev.getButton() != MouseEvent.BUTTON1)
+                return;
+            if (!isVisible() || !isMapModeOk())
+                return;
+            if (!cycleModeArmed) {
+                return;
+            }
+
+            Rectangle hitBoxClick = new Rectangle((int) startPoint.getX() - 10, (int) startPoint.getY() - 10, 15, 15);
+            if (!hitBoxClick.contains(ev.getPoint())) {
+                return;
+            }
+
+            Point mousePos = ev.getPoint();
+            boolean cycle = cycleModeArmed && lastSelPos != null && lastSelPos.equals(mousePos);
+            final boolean isShift = (ev.getModifiersEx() & MouseEvent.SHIFT_DOWN_MASK) == MouseEvent.SHIFT_DOWN_MASK;
+            int idx = getPhotoIdxUnderMouse(ev, cycle);
+            if (idx >= 0) {
+                lastSelPos = mousePos;
+                cycleModeArmed = false;
+                ImageEntry img = data.getImages().get(idx);
+                if (data.isMultipleSelectionEnabled() && isShift) {
+                    if (data.isImageSelected(img)) {
+                        data.removeImageToSelection(img);
+                    } else {
+                        data.addImageToSelection(img);
+                    }
+                } else {
+                    data.setSelectedImage(img);
+                }
+            }
+        }
+    }
+
     /**
      * Loads a set of images, while displaying a dialog that indicates what the plugin is currently doing.
      * In facts, this object is instantiated with a list of files. These files may be JPEG files or
@@ -745,58 +798,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
 
     @Override
     public void hookUpMapView() {
-        mouseAdapter = new MouseAdapter() {
-            private boolean isMapModeOk() {
-                MapMode mapMode = MainApplication.getMap().mapMode;
-                return mapMode == null || isSupportedMapMode(mapMode);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (e.getButton() != MouseEvent.BUTTON1)
-                    return;
-                if (isVisible() && isMapModeOk()) {
-                    cycleModeArmed = true;
-                    invalidate();
-                    startPoint = e.getPoint();
-                }
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent ev) {
-                if (ev.getButton() != MouseEvent.BUTTON1)
-                    return;
-                if (!isVisible() || !isMapModeOk())
-                    return;
-                if (!cycleModeArmed) {
-                    return;
-                }
-
-                Rectangle hitBoxClick = new Rectangle((int) startPoint.getX() - 10, (int) startPoint.getY() - 10, 15, 15);
-                if (!hitBoxClick.contains(ev.getPoint())) {
-                    return;
-                }
-
-                Point mousePos = ev.getPoint();
-                boolean cycle = cycleModeArmed && lastSelPos != null && lastSelPos.equals(mousePos);
-                final boolean isShift = (ev.getModifiersEx() & MouseEvent.SHIFT_DOWN_MASK) == MouseEvent.SHIFT_DOWN_MASK;
-                int idx = getPhotoIdxUnderMouse(ev, cycle);
-                if (idx >= 0) {
-                    lastSelPos = mousePos;
-                    cycleModeArmed = false;
-                    ImageEntry img = data.getImages().get(idx);
-                    if (data.isMultipleSelectionEnabled() && isShift) {
-                        if (data.isImageSelected(img)) {
-                            data.removeImageToSelection(img);
-                        } else {
-                            data.addImageToSelection(img);
-                        }
-                    } else {
-                        data.setSelectedImage(img);
-                    }
-                }
-            }
-        };
+        mouseAdapter = new MouseListener();
 
         mouseMotionAdapter = new MouseMotionAdapter() {
             @Override
