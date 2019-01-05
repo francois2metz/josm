@@ -188,16 +188,26 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
             Point mousePos = ev.getPoint();
             boolean cycle = cycleModeArmed && lastSelPos != null && lastSelPos.equals(mousePos);
             final boolean isShift = (ev.getModifiersEx() & MouseEvent.SHIFT_DOWN_MASK) == MouseEvent.SHIFT_DOWN_MASK;
+            final boolean isCtrl = (ev.getModifiersEx() & MouseEvent.CTRL_DOWN_MASK) == MouseEvent.CTRL_DOWN_MASK;
             int idx = getPhotoIdxUnderMouse(ev, cycle);
             if (idx >= 0) {
                 lastSelPos = mousePos;
                 cycleModeArmed = false;
                 ImageEntry img = data.getImages().get(idx);
                 if (data.isMultipleSelectionEnabled() && isShift) {
-                    if (data.isImageSelected(img)) {
-                        data.removeImageToSelection(img);
+                    if (isCtrl && !data.getSelectedImages().isEmpty()) {
+                        int idx2 = data.getImages().indexOf(data.getSelectedImages().get(data.getSelectedImages().size() - 1));
+                        int startIndex = Math.min(idx, idx2);
+                        int endIndex = Math.max(idx, idx2);
+                        for (int i = startIndex; i <= endIndex; i++) {
+                            data.addImageToSelection(data.getImages().get(i));
+                        }
                     } else {
-                        data.addImageToSelection(img);
+                        if (data.isImageSelected(img)) {
+                            data.removeImageToSelection(img);
+                        } else {
+                            data.addImageToSelection(img);
+                        }
                     }
                 } else {
                     data.setSelectedImage(img);
