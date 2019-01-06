@@ -180,17 +180,6 @@ public class ImageDataTest {
         assertEquals(0, data.getSelectedImages().size());
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testRemoveSelectedImageWithMultipleSelectionEnabled() {
-        List<ImageEntry> list = getOneImage();
-        ImageData data = new ImageData(list);
-        list.add(new ImageEntry(new File("test2")));
-        data.enableMultipleSelection();
-        data.selectFirstImage();
-        data.addImageToSelection(list.get(1));
-        data.removeSelectedImage();
-    }
-
     @Test
     public void testRemoveSelectedWithImageTriggerListener() {
         List<ImageEntry> list = getOneImage();
@@ -274,30 +263,11 @@ public class ImageDataTest {
     }
 
     @Test
-    public void testEnableAndDisableMultipleSelection() {
-        ImageData data = new ImageData(null);
-        assertFalse(data.isMultipleSelectionEnabled());
-        data.enableMultipleSelection();
-        assertTrue(data.isMultipleSelectionEnabled());
-        data.disableMultipleSelection();
-        assertFalse(data.isMultipleSelectionEnabled());
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testAddImageToSelectionThrowException() {
-        List<ImageEntry> list = getOneImage();
-
-        ImageData data = new ImageData(list);
-        data.addImageToSelection(list.get(0));
-    }
-
-    @Test
     public void testAddImageToSelection() {
         List<ImageEntry> list = getOneImage();
         list.add(new ImageEntry(new File("test2")));
 
         ImageData data = new ImageData(list);
-        data.enableMultipleSelection();
         data.addImageToSelection(list.get(0));
         data.addImageToSelection(list.get(0));
         assertEquals(1, data.getSelectedImages().size());
@@ -311,21 +281,12 @@ public class ImageDataTest {
         list.add(new ImageEntry());
 
         ImageData data = new ImageData(list);
-        data.enableMultipleSelection();
         data.selectLastImage();
         data.removeImageToSelection(list.get(1));
         assertEquals(0, data.getSelectedImages().size());
         data.selectFirstImage();
         assertEquals(1, data.getSelectedImages().size());
 
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testRemoveImageToSelectionThrowException() {
-        List<ImageEntry> list = getOneImage();
-
-        ImageData data = new ImageData(list);
-        data.removeImageToSelection(list.get(0));
     }
 
     @Test
@@ -337,7 +298,6 @@ public class ImageDataTest {
         assertFalse(data.isImageSelected(list.get(0)));
         data.selectFirstImage();
         assertTrue(data.isImageSelected(list.get(0)));
-        data.enableMultipleSelection();
         data.addImageToSelection(list.get(1));
         assertTrue(data.isImageSelected(list.get(0)));
         assertTrue(data.isImageSelected(list.get(1)));
@@ -352,7 +312,6 @@ public class ImageDataTest {
         list.add(new ImageEntry(new File("test3")));
 
         ImageData data = new ImageData(list);
-        data.enableMultipleSelection();
         data.addImageToSelection(list.get(1));
         data.addImageToSelection(list.get(2));
 
@@ -381,7 +340,6 @@ public class ImageDataTest {
         new Expectations(listener) {{
             listener.selectedImagesChanged(data); times = 3;
         }};
-        data.enableMultipleSelection();
         data.addImageDataUpdateListener(listener);
         data.selectFirstImage();
         data.addImageToSelection(list.get(1));
