@@ -37,8 +37,6 @@ public class ImageData {
 
     private List<Integer> selectedImagesIndex = new ArrayList<>();
 
-    private boolean multipleSelection;
-
     private final ListenerList<ImageDataUpdateListener> listeners = ListenerList.create();
 
     /**
@@ -108,28 +106,6 @@ public class ImageData {
         if (!selected.isEmpty()) {
             setSelectedImageIndex(data.indexOf(selected.get(0)));
         }
-    }
-
-    /**
-     * Enable multiple selection of images. It means to be used by plugins
-     */
-    public void enableMultipleSelection() {
-        multipleSelection = true;
-    }
-
-    /**
-     * Disable multiple selection of images. It means to be used by plugins
-     */
-    public void disableMultipleSelection() {
-        multipleSelection = false;
-    }
-
-    /**
-     * Check if multiple selection of images is enabled
-     * @return {@code true} if enabled, {@code false} otherwise
-     */
-    public boolean isMultipleSelectionEnabled() {
-        return multipleSelection;
     }
 
     /**
@@ -210,10 +186,6 @@ public class ImageData {
      * @param image {@link ImageEntry} the image to add
      */
     public void addImageToSelection(ImageEntry image) {
-        if (!isMultipleSelectionEnabled()) {
-            throw new IllegalStateException(tr("You must enable multiple selection of images"));
-        }
-
         int index = data.indexOf(image);
         if (selectedImagesIndex.get(0) == -1) {
             setSelectedImage(image);
@@ -228,9 +200,6 @@ public class ImageData {
      * @param image {@link ImageEntry} the image to remove
      */
     public void removeImageToSelection(ImageEntry image) {
-        if (!isMultipleSelectionEnabled()) {
-            throw new IllegalStateException(tr("You must enable multiple selection of images"));
-        }
         int index = data.indexOf(image);
         selectedImagesIndex.remove(selectedImagesIndex.indexOf(index));
         if (selectedImagesIndex.isEmpty()) {

@@ -194,7 +194,7 @@ public class GeoImageLayer extends AbstractModifiableLayer implements
                 lastSelPos = mousePos;
                 cycleModeArmed = false;
                 ImageEntry img = data.getImages().get(idx);
-                if (data.isMultipleSelectionEnabled() && isShift) {
+                if (isShift) {
                     if (isCtrl && !data.getSelectedImages().isEmpty()) {
                         int idx2 = data.getImages().indexOf(data.getSelectedImages().get(data.getSelectedImages().size() - 1));
                         int startIndex = Math.min(idx, idx2);
