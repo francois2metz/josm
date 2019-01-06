@@ -483,8 +483,8 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
             btnCopyPath.setEnabled(false);
             if (entries != null && entries.size() > 1) {
                 imgDisplay.setEmptyText(tr("Multiple images selected"));
-                btnFirst.setEnabled(!data.isImageSelected(data.getImages().get(0)));
-                btnLast.setEnabled(!data.isImageSelected(data.getImages().get(data.getImages().size() - 1)));
+                btnFirst.setEnabled(!isFirstImageSelected(data));
+                btnLast.setEnabled(!isLastImageSelected(data));
             }
             imgDisplay.setImage(null);
             imgDisplay.setOsdText("");
@@ -499,6 +499,14 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
                 dialogsPanel.reconstruct(Action.COLLAPSED_TO_DEFAULT, this);
             }
         }
+    }
+
+    private boolean isLastImageSelected(ImageData data) {
+        return data.isImageSelected(data.getImages().get(data.getImages().size() - 1));
+    }
+
+    private boolean isFirstImageSelected(ImageData data) {
+        return data.isImageSelected(data.getImages().get(0));
     }
 
     /**
