@@ -475,19 +475,19 @@ public final class ImageViewerDialog extends ToggleDialog implements LayerChange
             // if this method is called to reinitialize dialog content with a blank image,
             // do not actually show the dialog again with a blank image if currently hidden (fix #10672)
             setTitle(tr("Geotagged Images"));
-            if (entries != null && entries.size() > 1) {
-                imgDisplay.setEmptyText(tr("Multiple images selected"));
-            } else {
-                imgDisplay.setEmptyText(null);
-            }
-
-            imgDisplay.setImage(null);
-            imgDisplay.setOsdText("");
+            imgDisplay.setEmptyText(null);
             setNextEnabled(false);
             setPreviousEnabled(false);
             btnDelete.setEnabled(false);
             btnDeleteFromDisk.setEnabled(false);
             btnCopyPath.setEnabled(false);
+            if (entries != null && entries.size() > 1) {
+                imgDisplay.setEmptyText(tr("Multiple images selected"));
+                btnFirst.setEnabled(!data.isImageSelected(data.getImages().get(0)));
+                btnLast.setEnabled(!data.isImageSelected(data.getImages().get(data.getImages().size() - 1)));
+            }
+            imgDisplay.setImage(null);
+            imgDisplay.setOsdText("");
             return;
         }
         if (!isDialogShowing()) {
