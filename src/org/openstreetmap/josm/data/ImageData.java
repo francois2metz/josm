@@ -1,8 +1,6 @@
 // License: GPL. For details, see LICENSE file.
 package org.openstreetmap.josm.data;
 
-import static org.openstreetmap.josm.tools.I18n.tr;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -232,22 +230,17 @@ public class ImageData {
     }
 
     /**
-     * Remove the current selected image from the list
+     * Remove the current selected images from the list
      */
-    public void removeSelectedImage() {
+    public void removeSelectedImages() {
         List<ImageEntry> selected = getSelectedImages();
-        if (selected.size() > 1) {
-            throw new IllegalStateException(tr("Multiple images have been selected"));
-        }
         if (selected.isEmpty()) {
             return;
         }
-        data.remove(getSelectedImages().get(0));
-        if (selectedImagesIndex.get(0) == data.size()) {
-            setSelectedImageIndex(data.size() - 1);
-        } else {
-            setSelectedImageIndex(selectedImagesIndex.get(0), true);
+        for (ImageEntry img: getSelectedImages()) {
+            data.remove(img);
         }
+        setSelectedImageIndex(-1, true);
     }
 
     /**
